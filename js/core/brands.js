@@ -1,0 +1,114 @@
+/*! Needleworks (c) 2026 4Gables. All rights reserved. Proprietary, see LICENSE. https://4gables.com/needleworks/ */
+// Spool numbers in the thread brand people actually own: the nearest spool to a colour, overall or among the ones
+// they've listed. Labels only; the PES file always carries Brother PEC colours.
+import { lab } from "./colour.js";
+import { BRAND_CHARTS as OTHERS } from "./brandcharts.js";
+import { PEC_THREADS, hexToRgb, rgbToHex } from "./threads.js";
+
+// Brother Embroidery thread: the numbers on the spools for the 61 colours the machine names (Brother's own list,
+// support.brother.com Artspira thread names), coloured as the PEC palette, so "Brother 800 Red" is exactly the
+// machine's Red. Most PE900 owners' spools are these.
+const BROTHER_NUM = { "Prussian Blue": "007", Blue: "405", "Teal Green": "534", "Cornflower Blue": "070", Red: "800", "Reddish Brown": "337",
+  Magenta: "620", "Light Lilac": "810", Lilac: "612", "Mint Green": "502", "Deep Gold": "214", Orange: "208", Yellow: "205", "Lime Green": "513",
+  Brass: "328", Silver: "005", "Russet Brown": "330", "Cream Brown": "010", Pewter: "704", Black: "900", Ultramarine: "406", "Royal Purple": "869",
+  "Dark Gray": "707", "Dark Brown": "058", "Deep Rose": "086", "Light Brown": "323", "Salmon Pink": "079", Vermilion: "030", White: "001",
+  Violet: "613", Seacrest: "542", "Sky Blue": "019", Pumpkin: "126", "Cream Yellow": "812", Khaki: "348", "Clay Brown": "339", "Leaf Green": "509",
+  "Peacock Blue": "415", Gray: "817", "Warm Gray": "399", "Dark Olive": "517", "Flesh Pink": "124", Pink: "085", "Deep Green": "808",
+  Lavender: "804", "Wisteria Violet": "607", Beige: "843", Carmine: "807", "Amber Red": "333", "Olive Green": "519", "Dark Fuchsia": "107",
+  Tangerine: "209", "Light Blue": "017", "Emerald Green": "507", Purple: "614", "Moss Green": "515", "Harvest Gold": "206",
+  "Electric Blue": "420", "Lemon Yellow": "202", "Fresh Green": "027" };
+const seen = new Set();
+const BRAND_CHARTS = { brother: { name: "Brother", rows: PEC_THREADS.slice(1, 62).filter((t) => BROTHER_NUM[t[0]] && !seen.has(t[0]) && seen.add(t[0]))
+  .map(([name, r, g, b]) => `${rgbToHex([r, g, b]).slice(1)}|${BROTHER_NUM[name]}|${name}`).join(";") }, ...OTHERS };
+
+// CIELAB (D65): the brand charts' approximate darks are told apart by eye, not by the red-mean distance the machine
+// uses (that called black "Ivy", a dark green, in Robison-Anton)
+export { lab };   // (core/colour.js)
+
+const charts = {};
+function chart(brand) {
+  if (!BRAND_CHARTS[brand]) return null;
+  return (charts[brand] ||= BRAND_CHARTS[brand].rows.split(";").map((r) => {
+    const [hex, num, name] = r.split("|");
+    return { hex: "#" + hex, num, name, lab: lab(hexToRgb(hex)) };
+  }));
+}
+export const BRANDS = Object.fromEntries(Object.entries(BRAND_CHARTS).map(([k, b]) => [k, b.name]));
+
+// spool numbers typed any way ("20, 1902 0015") -> the chart's own spellings that exist
+export function spools(brand, text) {
+  const c = chart(brand); if (!c) return [];
+  const byNum = new Map(c.map((s) => [s.num.replace(/^0+/, ""), s.num]));
+  return [...new Set((text || "").split(/[\s,;]+/).map((t) => byNum.get(t.replace(/^0+/, ""))).filter(Boolean))];
+}
+
+// `far`: two colours that aren't the same to the eye (CIELAB `a`, `b`, ΔE between them `dE`). Far off overall, or off in
+// colour rather than lightness (a/b apart: white came out as "your Brother 017 Light Blue", dE 21, with no warning,
+// while a darker or lighter shade of one colour still reads as that colour)
+// Two pale tints leaning opposite ways read as different colours sooner: Flesh Pink (#fadade, a 12 chroma pink) as
+// "your Isacord 0015 White" (a bluish white, hue 90° round from it) was ab 14.7, just under 15, with no warning
+function far([, A, B], [, a, b], dE) {
+  const ab = Math.hypot(a - A, b - B), c1 = Math.hypot(A, B), c2 = Math.hypot(a, b), C = Math.max(c1, c2);
+  const turn = c1 >= 5 && c2 >= 5 && Math.acos(Math.max(-1, Math.min(1, (A * a + B * b) / (c1 * c2)))) > Math.PI / 3;
+  return dE > 25 || ab > Math.max(15, 0.25 * C) || (turn && ab > 10);
+}
+// two colours that read as different colours (an owned navy spool sewn where the machine says Olive Green)
+export function apart(hexA, hexB) {
+  const p = lab(hexToRgb(hexA)), q = lab(hexToRgb(hexB));
+  return far(p, q, Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]));
+}
+
+// a colour in one plain word or two ("pink", "dark green"), for a spool of theirs with no number typed
+export function colourWord(hex) {
+  const [L, a, b] = lab(hexToRgb(hex)), C = Math.hypot(a, b), h = ((Math.atan2(b, a) * 180) / Math.PI + 360) % 360;
+  if (C < 10) return L > 90 ? "white" : L < 22 ? "black" : L > 65 ? "light grey" : L < 40 ? "dark grey" : "grey";
+  const word = h < 15 || h >= 340 ? (L > 60 ? "pink" : "deep pink") : h < 50 ? (L > 65 ? "pink" : "red") : h < 75 ? (L < 55 ? "brown" : "orange")
+    : h < 100 ? (L < 55 ? "brown" : L > 75 ? "cream" : "gold") : h < 115 ? (L < 50 ? "olive" : "yellow") : h < 165 ? "green" : h < 215 ? "teal"
+    : h < 308 ? "blue" : "purple";
+  return (L < 35 && !["brown", "olive", "deep pink"].includes(word) ? "dark " : L > 80 && !["pink", "cream", "yellow"].includes(word) ? "light " : "") + word;
+}
+
+// a spool of theirs from a brand not charted here (Madeira), as they described it: { brand, num, hex } -> a spool
+export function ownSpoolOf(o) {
+  const label = `${o.brand}${o.num ? ` ${o.num}` : ` (${colourWord(o.hex)})`}`;
+  return { hex: o.hex, num: o.num || "", name: "", lab: lab(hexToRgb(o.hex)), label, own: true, ownBrand: o.brand };
+}
+
+// nearest spool to hex: among `owned` numbers and `extra` spools of theirs from other brands ({ brand, num, hex }) if
+// given (and any match), else the whole chart
+export function nearestSpool(brand, hex, owned = null, extra = null) {
+  let c = chart(brand); if (!c) return null;
+  const mine = [...(owned?.length ? c.filter(((o) => (s) => o.has(s.num))(new Set(owned))) : []), ...(extra || []).map(ownSpoolOf)];
+  if (mine.length) c = mine;
+  const [L, A, B] = lab(hexToRgb(hex));
+  let best = null, bd = Infinity;
+  for (const s of c) { const d = (s.lab[0] - L) ** 2 + (s.lab[1] - A) ** 2 + (s.lab[2] - B) ** 2; if (d < bd) { bd = d; best = s; } }
+  if (!best) return null;
+  return { ...best, dE: Math.sqrt(bd), far: far([L, A, B], best.lab, Math.sqrt(bd)), brand: best.ownBrand || BRANDS[brand],
+    label: best.label || `${BRANDS[brand]} ${best.num}${best.name ? ` ${best.name}` : ""}` };
+}
+
+// the n spools nearest a colour (by eye, CIELAB), nearest first: "Threads I own" matching a spool from a brand that isn't
+// charted here (Madeira) by its colour
+export function nearestSpools(brand, hex, n = 8) {
+  const c = chart(brand); if (!c) return [];
+  const [L, A, B] = lab(hexToRgb(hex));
+  return c.map((s) => ({ num: s.num, d: (s.lab[0] - L) ** 2 + (s.lab[1] - A) ** 2 + (s.lab[2] - B) ** 2 })).sort((a, b) => a.d - b.d).slice(0, n).map((s) => s.num);
+}
+
+// example spool numbers for the "Threads I own" box, in the brand's own spelling: its white, red and black
+export function exampleSpools(brand) {
+  return chart(brand) ? ["#ffffff", "#e0201c", "#000000"].map((h) => nearestSpool(brand, h).num).join(" ") : "";
+}
+
+// every spool in a brand's chart in colour-card order, for "Threads I own" to tick: whites to blacks, then the hues
+// round from red, each light to dark (in number order Isacord's 391 swatches jumped about in colour)
+export function chartSpools(brand) {
+  const c = chart(brand); if (!c) return [];
+  const key = (s) => { const [L, a, b] = s.lab, C = Math.hypot(a, b); return C < 8 ? [0, -L] : [1 + Math.floor((((Math.atan2(b, a) * 180) / Math.PI + 370) % 360) / 20), -L]; };
+  return c.map((s) => ({ s, k: key(s) })).sort((x, y) => x.k[0] - y.k[0] || x.k[1] - y.k[1]).map(({ s }) => ({ hex: s.hex, num: s.num, name: s.name || "", label: `${BRANDS[brand]} ${s.num}${s.name ? ` ${s.name}` : ""}` }));
+}
+
+// a Brother thread's spool number by the name the machine shows ("Olive Green" -> "519"): the spool for a colour is
+// the thread the file gives it, which may be its second-nearest (the nearest by eye said 707 Dark Gray beside Olive Green)
+export const brotherNum = (name) => BROTHER_NUM[name] || "";

@@ -1,0 +1,166 @@
+/*! Needleworks (c) 2026 4Gables. All rights reserved. Proprietary, see LICENSE. https://4gables.com/needleworks/ */
+// The app's own verdict on a file it hands out: tests/pe900_check.py's stitch-quality rules, run on the file as
+// written (decoded from its bytes, so the writer's splits and rounding count), so "Checked" means what the checker
+// means. Until 2026-10-30 the download dialog said "Checked: it opens on a Brother PE900" for files the checker
+// failed (density 25, a 12.7 mm stitch). Stitch units 0.1 mm.
+import { stopWords } from "./words.js";
+import { COLOR_CHANGE, JUMP, STITCH, STOP, TRIM, designBlockAgrees, readEmbroidery } from "./core/formats.js";
+
+import { density } from "./core/density.js";
+import { LIMITS } from "./core/limits.js";
+
+// (core/recipes.js holds the numbers; pe900_check has MAX_PER_MM2, MAX_STITCH, MAX_BLOCKS)
+export const LIMIT = LIMITS.hits;         // needle hits per mm² per colour block
+export const MAX_STITCH = LIMITS.longest; // 12.1 mm, the longest needle move
+export const MAX_BLOCKS = LIMITS.blocks;  // colour blocks the machine steps through: 98 thread changes
+const TINY = LIMITS.tiny;                 // stitches under 0.3 mm, bar tie-ins (the first 6 after a jump, trim or thread change)
+const TINY_SHARE = 0.02, SAME_SHARE = 0.01, SPARSE = 0.6;
+
+// The densest 1 mm window in one colour block at any 0.1 mm grid offset (the machine's grid isn't ours: offset 0
+// alone said 17 for peace.pes where pe900_check finds 25), and how many offset-0 cells sit under a window over the
+// limit. A window lies in a 2 x 2 group of offset-0 cells, its corner cell possibly empty; only groups over the
+// limit (or over the most found so far) are scanned. A STOP starts a block too (a pause between two blocks of one
+// thread: pyembroidery reads it so).
+export function peak(pattern) {
+  const { max, cells } = density(pattern.stitches, (hits, most) => hits <= LIMIT && hits <= most);
+  return { max, hot: cells.filter((c) => c.top > LIMIT).length };
+}
+
+// satin coverage as pe900_check measures it: in long zigzags (stitches 1.2-6 mm, each turning back on the last), the
+// gap between hits on the same edge (mm, median); null with under 200 such gaps. Measured along the edge, across the
+// stitch (since 2026-10-31): a satin round a tight curve shortens every other stitch to 60 % on its inner edge, and
+// the straight-line distance between a full and a short hit read that step in as a gap (a 10 mm appliqué star "far
+// apart", 0.61 mm, its hits 0.35 mm apart along the edge). Sparse files read as before (rosacea 0.86 -> 0.85,
+// Ashley v1-3 0.80-0.85; the batch moves 0-0.1, all under 0.45).
+export function satinGap(st) {
+  // (in mm, as the checker works)
+  const pts = st.filter((s) => s[2] === STITCH).map(([x, y]) => [x / 10, y / 10]), same = [];
+  let run = [];
+  for (let k = 2; k < pts.length; k++) {
+    const [a, b, c] = [pts[k - 2], pts[k - 1], pts[k]], v1 = [b[0] - a[0], b[1] - a[1]], v2 = [c[0] - b[0], c[1] - b[1]];
+    const l1 = Math.hypot(...v1), l2 = Math.hypot(...v2);
+    if (l1 >= 1.2 && l1 <= 6 && l2 >= 1.2 && l2 <= 6 && (v1[0] * v2[0] + v1[1] * v2[1]) / (l1 * l2) < -0.85) run.push(Math.abs((c[0] - a[0]) * v1[1] - (c[1] - a[1]) * v1[0]) / l1);
+    else { if (run.length >= 6) same.push(...run); run = []; }
+  }
+  if (run.length >= 6) same.push(...run);
+  if (same.length < 200) return null;
+  same.sort((a, b) => a - b);
+  return Math.round(same[same.length >> 1] * 100) / 100;
+}
+
+// needle moves as pe900_check counts them: longest stitch (from the last stitch or jump), tiny (under 0.3 mm, not
+// among the first 6 after a jump/trim/thread change), same hole (0 mm, likewise), stitches
+export function moves(st) {
+  let longest = 0, tiny = 0, same = 0, n = 0, over = 0, prev = null, after = 0;
+  for (const [x, y, c] of st) {
+    if (c === STITCH) {
+      n++;
+      if (prev) {
+        // (longest in float mm as the checker has it; tiny in whole 0.1 mm units, as it now counts them too)
+        const d = Math.hypot(x / 10 - prev[0] / 10, y / 10 - prev[1] / 10), d10 = Math.hypot(Math.round(x) - Math.round(prev[0]), Math.round(y) - Math.round(prev[1]));
+        if (d > longest) longest = d;
+        if (d > MAX_STITCH / 10) over++;
+        if (after > 6) { if (d10 > 0 && d10 < TINY) tiny++; if (d10 === 0) same++; }
+        after++;
+      }
+    }
+    // (a STOP doesn't count: pe900_check doesn't reset there either)
+    if (c === JUMP || c === TRIM || c === COLOR_CHANGE) after = 0;
+    if (c === STITCH || c === JUMP) prev = [x, y];
+  }
+  return { longest, tiny, same, stitches: n, over };
+}
+
+// what's wrong with a pattern (decoded from the file's bytes), in plain words: [{ key, text }] (empty: it passes)
+export function verdict(pattern) {
+  pattern = withStops(pattern);
+  let blocks = 1, stops = 0;
+  for (const s of pattern.stitches) if (s[2] === COLOR_CHANGE || s[2] === STOP) { blocks++; if (s[2] === STOP) stops++; }
+  const m = moves(pattern.stitches), { max, hot } = peak(pattern), gap = satinGap(pattern.stitches), out = [];
+  if (hot) out.push({ key: "dense", text: `${hot} ${hot === 1 ? "spot is" : "spots are"} too dense (${denseWords(max)}): the thread can break or nest there.` });
+  if (m.longest > MAX_STITCH / 10) out.push({ key: "long", text: `${m.over} ${m.over === 1 ? "stitch is" : "stitches are"} longer than the 12 mm the machine sews in one stitch (up to ${m.longest.toFixed(1)} mm).` });
+  if (m.tiny > TINY_SHARE * m.stitches) out.push({ key: "tiny", text: `${m.tiny} ${m.tiny === 1 ? "stitch is" : "stitches are"} shorter than 0.3 mm (${((100 * m.tiny) / m.stitches).toFixed(1)}%): they pile up thread and can break it.` });
+  if (m.same > SAME_SHARE * m.stitches) out.push({ key: "same", text: `${m.same} ${m.same === 1 ? "stitch goes" : "stitches go"} back into the hole the needle is already in.` });
+  // (the PEC header's thread list, one per block, is what the machine steps through: pe900_check fails any other count)
+  if (pattern.pec && pattern.pec.length !== blocks) out.push({ key: "colours", text: `The file lists ${pattern.pec.length} ${pattern.pec.length === 1 ? "thread" : "threads"} for ${blocks} ${blocks === 1 ? "colour" : "colours"}: the machine may ask for the wrong threads.` });
+  // (PEC 62-64 are appliqué steps on Brother machines, not threads: the machine shows "Appliqué material" there. A
+  // file that names its threads so means it; anything else would ask for the wrong thing at the machine)
+  const appl = (pattern.pec || []).filter((c) => c >= 62).length;
+  if (appl && !(pattern.threads || []).some((t) => /appli|placement|tack/i.test(t.name || ""))) out.push({ key: "applique", text: `${appl === 1 ? "One colour uses a code" : `${appl} colours use codes`} Brother machines read as an appliqué step, not a thread: the machine would show “Appliqué” there instead of the thread to use.` });
+  if (blocks > MAX_BLOCKS) out.push({ key: "blocks", text: `${stopWords(blocks - 1 - stops, stops)}: the machine can take ${MAX_BLOCKS - 1} at most in one design.` });
+  if (gap != null && gap > SPARSE) out.push({ key: "sparse", text: `The satin stitches are far apart (${gap.toFixed(2)} mm on each edge; well-made designs 0.3–0.4 mm), so fabric may show through.` });
+  return out;
+}
+
+// the densest spot in plain words, one wording everywhere (the checkup said "sold designs stay under 25" beside
+// Download's "24 is the most sold designs have"; "needle hits per mm²" meant nothing to a newcomer)
+// what the machine itself can't take as the file is: never saved as it came (it's written again, or not saved at all)
+export const HARD = new Set(["blocks", "colours", "block", "applique"]);
+
+export const denseWords = (max) => `up to ${max} stitches in one square millimetre, about a pinhead; sold designs have ${LIMIT} at most`;
+
+// (the words for stops live in words.js, one vocabulary for every surface)
+export { stopWords };
+
+// a thread change to the same PEC thread is a machine pause (pyembroidery's interpolate_duplicate_color_as_stop)
+function withStops(pattern) {
+  const pec = pattern.pec;
+  if (!pec || pec.length < 2) return pattern;
+  let k = 0;
+  return { ...pattern, stitches: pattern.stitches.map((s) => (s[2] === COLOR_CHANGE && pec[++k] === pec[k - 1] ? [s[0], s[1], STOP] : s)) };
+}
+
+// the verdict on PES bytes (a file that won't decode is someone else's problem: validatePES refuses it first)
+// (and, from the bytes, a PES design block that isn't the design the machine sews: PE-DESIGN would show another)
+export function verdictOf(bytes) {
+  try {
+    const out = verdict(readEmbroidery(bytes, "check.pes"));
+    if (designBlockAgrees(bytes) === false) out.push({ key: "block", text: "PE-DESIGN would show a different design from the one the machine sews." });
+    return out;
+  } catch (e) {
+    // (the check itself failing is not a pass: it read as "no problems" and the dialog said Checked)
+    console.error(e);
+    return [{ key: "unchecked", text: "This file couldn't be checked, so look at the preview before you sew it." }];
+  }
+}
+
+// A file that ends before its stitches do (cut short in a download or copy): PES/PEC whose stitch block runs past
+// the end of the file or has no end marker, or a DST without its end code. It still decodes, as part of the design.
+export function endsEarly(bytes, name = "") {
+  const head = new TextDecoder("latin1").decode(bytes.slice(0, 8));
+  const u24 = (i) => bytes[i] | (bytes[i + 1] << 8) | (bytes[i + 2] << 16);
+  if (head.startsWith("#PES") || head.startsWith("#PEC")) {
+    const pec = head.startsWith("#PEC") ? 8 : bytes[8] | (bytes[9] << 8) | (bytes[10] << 16) | (bytes[11] << 24);
+    const blk = pec + 512;
+    if (!(pec > 0) || blk + 20 > bytes.length) return true;
+    const end = blk + u24(blk + 2);
+    if (end > bytes.length) return true;
+    // (the end marker, 0xFF, inside the block: walk the stitches as the reader does, from after the design box, or
+    // from the box itself when its bytes are the first stitches: a pyembroidery file starting at the origin)
+    const ends = (i) => {
+      while (i < end) {
+        const v1 = bytes[i];
+        if (v1 === 0xff) return true;
+        if (v1 === 0xfe && bytes[i + 1] === 0xb0) { i += 3; continue; }
+        i += v1 & 0x80 ? 2 : 1;
+        i += bytes[i] & 0x80 ? 2 : 1;
+      }
+      return false;
+    };
+    return !(ends(blk + 20) || (!(bytes[blk + 16] & 0x80 && bytes[blk + 18] & 0x80) && ends(blk + 16)));
+  }
+  // (and a DST whose end code comes long before its records do: one changed byte in flipped.dst read as the end, and
+  // 356 of its 12,203 stitches opened as a whole design, "Fits", with nothing said)
+  if (/\.dst$/i.test(name)) {
+    for (let i = 512; i + 3 <= bytes.length; i += 3) if ((bytes[i + 2] & 0xf3) === 0xf3) {
+      // (padding after it, zeros, spaces or 0x1A, or stitches that go nowhere, isn't more of the design)
+      const pad = (v) => v === 0 || v === 0x1a || v === 0x20;
+      let more = 0;
+      for (let j = i + 3; j + 3 <= bytes.length; j += 3)
+        if (!(pad(bytes[j]) && pad(bytes[j + 1]) && pad(bytes[j + 2])) && !(!bytes[j] && !bytes[j + 1] && (bytes[j + 2] & 0xf3) === 0x03)) more++;
+      return more > 2;
+    }
+    return true;
+  }
+  return false;
+}

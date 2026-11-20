@@ -1,0 +1,486 @@
+<!doctype html>
+<!-- Needleworks (c) 2026 4Gables. All rights reserved. Proprietary, not open source: copying, rehosting or
+     republishing any part of this site or its code needs written permission. Licence: https://github.com/4gables/needleworks/blob/main/LICENSE -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Needleworks</title>
+<meta name="description" content="Make embroidery files for your machine in the browser: names, monograms, bookmarks, pictures to stitches, and a PES viewer.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%23b3133a' stroke-width='3'/%3E%3Cpath d='M9 20c4-9 10-9 14 0' fill='none' stroke='%23b3133a' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- the page's own text faces: at once on a visit after the first (they are in the browser or the offline copy by
+     then), after the first design is on screen on a first visit (js/app.js `firstShown`), when 109 KB of them took
+     the line from the scripts and the lettering font. Until they are in, css/app.css's stand-ins hold the text's
+     place. (`?uifonts=off`: tests/, the page as it is before they arrive.) -->
+<script>(function () { var U = "https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@500&display=swap", w = window, seen = false; try { seen = !!localStorage.getItem("nw:uifonts"); } catch (e) {}
+  w.nwFonts = function () { if (w.nwFonts.on || /[?&]uifonts=off/.test(location.search)) return; w.nwFonts.on = true; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = U; document.head.appendChild(l); };
+  if (seen && !/[?&]uifonts=off/.test(location.search)) { w.nwFonts.on = true; document.write('<link rel="stylesheet" href="' + U + '">'); } })();</script>
+<link rel="stylesheet" href="css/app.css">
+<!-- the lettering font the first design is drawn in, asked for now and not when the scripts are in (a slow first
+     visit waited 4 s more for it): the saved design's, or the first starter's (tests/sw.test.mjs: starters.js SCRIPT) -->
+<script>try { var d = localStorage.getItem("nw:studio"), f = d ? (d.match(/"font":"NW [^"]+"/g) || []).map(function (m) { return m.slice(8, -1); }) : ["NW Great Vibes"]; if (!/^#(picture|open)/.test(location.hash)) f.slice(0, 3).forEach(function (n) { document.fonts.load('40px "' + n + '"'); }); } catch (e) {}</script>
+<!-- every module the first screen runs, asked for at once (the graph is six deep: one round trip each on a slow
+     connection). Written by `node tests/sw.test.mjs --write`, which also fails when the list and js/app.js's
+     imports disagree: a module that isn't needed here (the Picture and Open tabs' code comes later) is a download
+     the first preview waits for. -->
+<!-- first screen: start -->
+<link rel="modulepreload" href="js/along.js" fetchpriority="low"><link rel="modulepreload" href="js/api.js" fetchpriority="low"><link rel="modulepreload" href="js/app.js" fetchpriority="low"><link rel="modulepreload" href="js/checkup.js" fetchpriority="low">
+<link rel="modulepreload" href="js/common.js" fetchpriority="low"><link rel="modulepreload" href="js/core/brandcharts.js" fetchpriority="low"><link rel="modulepreload" href="js/core/brands.js" fetchpriority="low"><link rel="modulepreload" href="js/core/colour.js" fetchpriority="low">
+<link rel="modulepreload" href="js/core/density.js" fetchpriority="low"><link rel="modulepreload" href="js/core/fonts.js" fetchpriority="low"><link rel="modulepreload" href="js/core/formats-out.js" fetchpriority="low"><link rel="modulepreload" href="js/core/formats.js" fetchpriority="low">
+<link rel="modulepreload" href="js/core/glyphs.js" fetchpriority="low"><link rel="modulepreload" href="js/core/limits.js" fetchpriority="low"><link rel="modulepreload" href="js/core/machines.js" fetchpriority="low"><link rel="modulepreload" href="js/core/threads.js" fetchpriority="low">
+<link rel="modulepreload" href="js/core/turn.js" fetchpriority="low"><link rel="modulepreload" href="js/core/typed.js" fetchpriority="low"><link rel="modulepreload" href="js/engine.js" fetchpriority="low"><link rel="modulepreload" href="js/focus.js" fetchpriority="low">
+<link rel="modulepreload" href="js/gate.js" fetchpriority="low"><link rel="modulepreload" href="js/jobs.js" fetchpriority="low"><link rel="modulepreload" href="js/onitem.js" fetchpriority="low"><link rel="modulepreload" href="js/quality.js" fetchpriority="low">
+<link rel="modulepreload" href="js/render.js" fetchpriority="low"><link rel="modulepreload" href="js/sheet.js" fetchpriority="low"><link rel="modulepreload" href="js/state.js" fetchpriority="low"><link rel="modulepreload" href="js/threadui.js" fetchpriority="low">
+<link rel="modulepreload" href="js/words.js" fetchpriority="low"><link rel="modulepreload" href="js/zip.js" fetchpriority="low">
+<!-- first screen: end -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="copyright" content="(c) 2026 4Gables. All rights reserved.">
+<link rel="license" href="https://github.com/4gables/needleworks/blob/main/LICENSE">
+<meta name="theme-color" content="#b3133a">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+</head>
+<body>
+<nav class="skips" aria-label="Skip links"><a class="skip" href="#controls">Skip to the settings</a><a class="skip" href="#preview">Skip to the preview and Download (Ctrl+S or ⌘S from anywhere)</a></nav>
+<header class="top">
+  <div class="brand">
+    <span class="logo">Needleworks</span>
+    <span class="tag">Embroidery files, made right here in your browser.</span>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="What do you want to make?">
+    <button role="tab" id="tab-picture" aria-controls="panel-picture" aria-selected="true">Picture to stitches</button>
+    <button role="tab" id="tab-design" aria-controls="panel-design" aria-selected="false">Design your own</button>
+    <button role="tab" id="tab-open" aria-controls="panel-open" aria-selected="false">Open a design</button>
+  </nav>
+  <div class="machine">
+    <label for="machine">Machine</label>
+    <select id="machine"></select>
+    <label for="hoop" class="sr">Hoop</label>
+    <select id="hoop"></select>
+    <label for="brand" class="sr">Thread brand</label>
+    <select id="brand" title="Show the spool numbers of the thread you use"></select>
+  </div>
+</header>
+
+<main class="work">
+  <section class="stage" id="preview" aria-label="Preview" tabindex="-1">
+    <div class="canvas-wrap">
+      <canvas id="view" tabindex="0" aria-label="Stitch preview. In Design your own, the arrow keys move the selected piece."></canvas>
+      <div class="facts" id="facts"></div>
+      <div class="zoom">
+        <button type="button" id="zoom-out" aria-label="Zoom out">−</button>
+        <button type="button" id="zoom-fit">Fit</button>
+        <button type="button" id="zoom-in" aria-label="Zoom in">+</button>
+      </div>
+      <div class="busy" id="busy"><span class="spinner"></span><span id="busy-text">Getting ready…</span></div>
+      <div class="empty" id="empty" hidden></div>
+      <div class="error" id="error" role="alert" hidden></div>
+    </div>
+    <div class="sew">
+      <button type="button" id="play" class="ghost" aria-label="Watch it sew">▶︎ Watch it sew</button>
+      <input id="progress" autocomplete="off" type="range" min="0" max="1000" value="1000" aria-label="Sewing progress">
+      <details class="views">
+        <summary class="ghost">View</summary>
+        <div class="views-menu">
+          <label class="check small"><input id="show-hoop" type="checkbox" checked> Hoop</label>
+          <label class="check small" title="Shows where the needle goes in most often: yellow is busy, red is too dense (more than 24 per mm²)"><input id="show-heat" type="checkbox"> Thickness</label>
+          <label class="check small" title="Zoom in to see each thread's twist"><input id="show-real" type="checkbox"> Realistic thread</label>
+          <label class="field small" title="What the design is shown on, to see the thread colours against your fabric. The file doesn't change."><span>Background</span><select id="show-bg" autocomplete="off"></select></label>
+          <button type="button" id="item-open" class="ghost" title="See the design at its real size on a photo of the bib, towel or shirt">On my item</button>
+        </div>
+      </details>
+      <button type="button" id="turn" class="ghost turn" aria-pressed="false" title="Turn the hoop sideways, so a long design can use the hoop's long side."><span aria-hidden="true">⟲</span> Turn hoop</button>
+    </div>
+    <div class="bottom">
+      <p class="hint warn dl-warn" id="dl-warn" role="status" hidden></p>
+      <ul class="threads" id="threads" aria-label="Threads"></ul>
+      <div class="actions">
+        <label class="ghost pick" id="pick-picture" for="pic-file">Choose a picture</label>
+        <label class="ghost pick" id="pick-design" for="open-file">Open a design file</label>
+        <button type="button" id="share" class="ghost share" hidden>Send by text or email</button>
+        <button type="button" id="bar-undo" class="ghost bar-undo" disabled title="Undo the last change"><span aria-hidden="true">↶</span> Undo</button>
+        <button type="button" id="download" class="primary" disabled aria-keyshortcuts="Control+S Meta+S">Download PES</button>
+        <p class="extras"><span class="file-for"><label for="file-for">File for</label> <select id="file-for" autocomplete="off" title="Which machine the file is for. Only the Brother PES file is checked for your machine; the others have the same stitches, untested on their machines."></select></span><span class="hint file-for-note" id="file-for-note" hidden></span><button type="button" id="along-open" class="link" disabled>Sew along</button><button type="button" id="sheet-print" class="link" disabled>Print a sew sheet</button><button type="button" id="names-open" class="link" hidden>One for each name</button><button type="button" id="another-open" class="link" hidden title="Copies it and what's on it beside it: both sew in the same steps.">Make another in the hoop</button><span id="cut-files" class="cut-files" hidden>Cutter file: <button type="button" id="cut-file" class="link" title="The fabric shapes at actual size, to cut them out before you sew: an SVG for Cricut Design Space, Brother CanvasWorkspace or Silhouette Studio Designer Edition. Not for the embroidery machine.">Cricut</button> · <button type="button" id="cut-dxf" class="link" title="The fabric shapes at actual size, to cut them out before you sew: a DXF for Silhouette Studio (the free edition opens DXF, not SVG). Its size is in the file name: set it if Silhouette opens it scaled. Not for the embroidery machine.">Silhouette</button></span><button type="button" id="rename-open" class="link" hidden title="Give the file a name of your own">Rename</button></p>
+      </div>
+    </div>
+  </section>
+  <section class="controls" id="controls" aria-label="Settings" tabindex="-1">
+    <!-- picture -->
+    <div class="panel" id="panel-picture" role="tabpanel" aria-labelledby="tab-picture">
+      <h1>Turn a picture into stitches</h1>
+      <p class="lede">Works best with logos, clip art and simple drawings with a few solid colours. Photos won't stitch well. A picture with a see-through background is sewn just as it is drawn.</p>
+      <label class="drop" id="pic-drop">
+        <input id="pic-file" type="file" accept="image/*" class="sr-file">
+        <img id="pic-thumb" alt="" hidden>
+        <span class="drop-text"><b>Choose a picture</b> or drop it here. You can also paste one.</span>
+      </label>
+      <button type="button" id="pic-paste" class="ghost" hidden>Paste a picture</button>
+      <div class="pic-tools"><button type="button" id="pic-rotate" class="ghost" hidden>⟳ Rotate picture</button><button type="button" id="pic-crop" class="ghost" hidden>Crop</button></div>
+      <fieldset class="field" id="pic-parts-row" hidden>
+        <legend>This picture has <span id="pic-parts-n"></span> separate parts</legend>
+        <div id="pic-parts" class="pic-parts" role="group" aria-label="Which part to sew"></div>
+        <p class="hint">Sewn on its own, a part gets all the thread colours and the whole Size to itself.</p>
+      </fieldset>
+      <div class="hint pic-verdict" id="pic-verdict" role="status" hidden></div>
+      <p class="hint" id="pic-sample-note" hidden>Showing a sample flower. Choose your own picture above to stitch it instead.</p>
+      <details class="pic-guide" id="pic-guide">
+        <summary>Make art that stitches well</summary>
+        <p class="hint">Making a picture with ChatGPT, Gemini, Midjourney or another AI image tool, or drawing one? Art like this sews cleanly:</p>
+        <ul class="pic-guide-rules" id="pic-guide-rules"></ul>
+        <div class="field">
+          <label for="pic-guide-subject">What should the picture show?</label>
+          <input id="pic-guide-subject" type="text" autocomplete="off" placeholder="a fox curled up asleep">
+        </div>
+        <div class="field">
+          <label for="pic-guide-prompt">Ask your AI tool for it like this</label>
+          <textarea id="pic-guide-prompt" rows="7" readonly></textarea>
+          <p class="pic-guide-do"><button type="button" class="ghost" id="pic-guide-copy">Copy the prompt</button> <span class="hint inline" id="pic-guide-said" role="status"></span></p>
+          <p class="hint" id="pic-guide-tip"></p>
+          <p class="hint">Then save the picture it makes and choose it above: the check under the picture says what will sew well.</p>
+        </div>
+      </details>
+      <div id="pic-settings" class="settings" hidden>
+        <fieldset class="field">
+          <legend>Style</legend>
+          <div id="pic-style" class="chips plain">
+            <button type="button" data-s="fill" aria-pressed="true">Filled</button>
+            <button type="button" data-s="line" aria-pressed="false">Line drawing</button>
+            <button type="button" data-s="cross" aria-pressed="false">Cross-stitch</button>
+          </div>
+          <p id="pic-style-why" class="hint" role="status" hidden></p>
+        </fieldset>
+        <div class="field">
+          <label for="pic-colors"><span id="pic-colors-label">Thread colours</span> <output id="pic-colors-out">6</output></label>
+          <input id="pic-colors" autocomplete="off" type="range" min="1" max="8" value="6">
+        </div>
+        <fieldset class="field" id="pic-line-row" hidden>
+          <legend>Line thread</legend>
+          <div class="swatches" id="pic-line"></div>
+          <p class="hint" id="pic-line-name"></p>
+        </fieldset>
+        <div class="field">
+          <label for="pic-size" title="The longer side of the stitched design">Size <output id="pic-size-out">100 mm</output></label>
+          <input id="pic-size" autocomplete="off" type="range" min="20" max="176" value="100">
+          <p class="hint" id="pic-size-note" hidden></p>
+        </div>
+        <div class="field" id="pic-cross-row" hidden>
+          <label for="pic-cross">Cross size <output id="pic-cross-out">2.5 mm</output></label>
+          <input id="pic-cross" autocomplete="off" type="range" min="1.5" max="4" step="0.5" value="2.5">
+        </div>
+        <fieldset class="field" id="pic-details-row">
+          <legend>Small details</legend>
+          <div id="pic-details" class="chips plain">
+            <button type="button" data-v="most" aria-pressed="true">Leave out specks</button>
+            <button type="button" data-v="all" aria-pressed="false">Keep specks</button>
+          </div>
+          <p class="hint" id="pic-details-note" role="status" hidden></p>
+        </fieldset>
+        <fieldset class="field" id="pic-shade-row">
+          <legend>Soft shading</legend>
+          <div id="pic-shade" class="chips plain">
+            <button type="button" data-v="auto" aria-pressed="true">Auto</button>
+            <button type="button" data-v="blend" aria-pressed="false">Blend</button>
+            <button type="button" data-v="flat" aria-pressed="false">Flat colours</button>
+          </div>
+          <p class="hint" id="pic-shade-note" role="status" hidden></p>
+        </fieldset>
+        <label class="check"><input id="pic-bg" autocomplete="off" type="checkbox" checked> Leave the background unstitched</label>
+        <details class="more" id="pic-more">
+          <summary>More settings</summary>
+          <div class="field" id="pic-angle-row">
+            <label for="pic-angle">Fill direction <output id="pic-angle-out">45°</output></label>
+            <input id="pic-angle" autocomplete="off" type="range" min="0" max="175" step="5" value="45">
+            <label class="check small"><input id="pic-follow" autocomplete="off" type="checkbox"> Follow the shape <span class="hint inline">(each part's rows turn with it)</span></label>
+          </div>
+          <fieldset class="field" id="pic-density-row">
+            <legend>Fill</legend>
+            <div id="pic-density" class="chips">
+              <button type="button" data-d="standard" aria-pressed="true">Solid</button>
+              <button type="button" data-d="solid" aria-pressed="false">Extra solid (fleece, towels, dark fabric)</button>
+            </div>
+          </fieldset>
+        </details>
+        <p class="fine-warn" id="pic-fine" role="status" hidden></p>
+        <fieldset class="field">
+          <legend>Threads <span class="hint inline">(tap one to swap it or leave it out)</span></legend>
+          <div id="pic-palette" class="palette"></div>
+          <div id="pic-swap" class="pic-swap" role="region" aria-label="This thread" hidden></div>
+          <p class="hint" id="pic-inside" role="status" hidden></p>
+          <p class="hint" id="pic-areas-row" hidden><button type="button" class="link" id="pic-areas">Choose what is sewn, rub out a mark, join two colours</button> <span id="pic-areas-said"></span></p>
+          <p class="hint" id="pic-merged" hidden></p>
+          <label class="check small" id="pic-mine-row" hidden><input type="checkbox" id="pic-mine"> Use only threads I own</label>
+        </fieldset>
+        <p class="open-words" id="pic-use" hidden>Use it in Design your own (with a starter, words or a frame): <button type="button" class="link" id="pic-add">add it to my design</button><span id="pic-or"> or </span><button type="button" class="link" id="pic-new">start a new design with it</button>.</p>
+        <details class="steps" id="pic-steps-box">
+          <summary>How to stitch it <span class="hint inline" id="pic-steps-count"></span></summary>
+          <ol class="st-steps" id="pic-steps"></ol>
+        </details>
+      </div>
+    </div>
+
+    <!-- open -->
+    <!-- design your own -->
+    <div class="panel" id="panel-design" role="tabpanel" aria-labelledby="tab-design" hidden>
+      <h1>Design your own</h1>
+      <ol class="guide" id="st-guide">
+        <li><b>Pick a starting idea</b> below.</li>
+        <li><b>Tap a piece</b> to change its words, size or thread. Drag it on the preview to move it.</li>
+        <li><b>Download</b> and copy the file to a USB stick. “How to stitch it” says what to do at the machine, step by step.
+          <button type="button" class="link" id="st-guide-close" aria-label="Hide these tips">Got it</button></li>
+      </ol>
+      <fieldset class="field">
+        <legend role="heading" aria-level="2">Start from <span class="hint inline" id="st-cards-count"></span></legend>
+        <div id="st-cards" class="cards"></div>
+        <p class="hint" id="st-tip" hidden></p>
+      </fieldset>
+      <!-- (right under the starters: below the piece editor, a first-timer never saw it and sewed fleece as Cotton) -->
+      <details class="field sewn-on" id="st-sewn">
+        <summary>Sewing on: <b id="st-fabric-name">Cotton</b><span id="st-thread-name"></span></summary>
+        <div id="st-fabric" class="chips plain" role="group" aria-label="Fabric"></div>
+        <label class="check small"><input type="checkbox" id="st-baste"> Baste first (holds a towel or floated fabric flat)</label>
+        <p class="hint" id="st-fabric-tip"></p>
+        <div id="st-thread" class="chips plain" role="group" aria-label="Thread weight"></div>
+        <p class="hint" id="st-thread-tip"></p>
+      </details>
+      <div class="guide appl" id="st-appl" hidden>
+        <b>First time with appliqué?</b>
+        <ul>
+          <li><b>Have ready:</b> stabilizer (tear-away; cut-away for stretchy fabric), a piece of cotton or felt 1 in bigger than the shape, and small curved scissors.</li>
+          <li><b>Hoop</b> the base fabric with the stabilizer under it, smooth and tight like a drum.</li>
+          <li><b>At each pause</b> the machine stops for you. Take the whole hoop off to trim, but never take the fabric out of the hoop.</li>
+          <li><b>Trim</b> about 1 mm (a bare 1/16 in) outside the stitching, as close as you can without cutting it: further out and it shows past the satin edge.</li>
+          <li><b>Cotton frays less</b> with iron-on fusible web on the back; felt doesn't fray at all.</li>
+          <li><b>Check the size</b> on the machine's screen before you press Start.</li>
+        </ul>
+        <button type="button" class="link" id="st-appl-close">Got it</button>
+      </div>
+      <fieldset class="field pieces-box">
+        <legend role="heading" aria-level="2">Pieces <span class="hint inline">(sewn top to bottom)</span></legend>
+        <div class="pieces-tools">
+          <button type="button" class="ghost" id="st-undo" disabled title="Undo (⌘Z)"><span aria-hidden="true">↶</span> Undo</button>
+          <button type="button" class="ghost" id="st-redo" disabled title="Redo (⇧⌘Z)"><span aria-hidden="true">↷</span> Redo</button>
+        </div>
+        <ul id="st-pieces" class="pieces"></ul>
+        <span class="sr" id="st-pieces-keys">Arrow keys go between the pieces and their buttons.</span>
+        <div id="st-add" class="add">
+          <button type="button" class="ghost" data-add="text">+ Lettering</button>
+          <button type="button" class="ghost" data-add="monogram">+ Monogram</button>
+          <button type="button" class="ghost" data-add="frame">+ Frame</button>
+          <button type="button" class="ghost" data-add="motif">+ Motif</button>
+          <button type="button" class="ghost" data-add="letters">+ Appliqué letters</button>
+          <button type="button" class="ghost" data-add="file">+ Design file</button>
+          <input type="file" id="st-file" accept=".pes,.pec,.dst" hidden>
+        </div>
+        <div class="add">
+          <button type="button" class="ghost" id="st-fit" title="Make the whole design as big as the hoop allows">Fit to hoop</button>
+          <button type="button" class="ghost" id="st-save" title="Keep this design to change it later (not for the machine: use Download PES for that)">Save design</button>
+          <label class="ghost st-load" for="st-load" title="Open a design saved from here">Open saved</label>
+          <input type="file" id="st-load" accept=".json,application/json" class="sr-file">
+        </div>
+        <details class="recent arrange" id="st-arrange">
+          <summary>Arrange</summary>
+          <p class="hint" id="st-arrange-for"></p>
+          <div class="add" id="st-arrange-tools">
+            <button type="button" class="ghost" data-lay="ring" title="Copies of the selected piece round the middle of the hoop, each turned to face out">Repeat in a circle</button>
+            <label class="sr" for="st-ring-n">How many round the circle</label>
+            <select id="st-ring-n" title="How many round the circle"><option>4</option><option>5</option><option selected>6</option><option>8</option><option>10</option><option>12</option></select>
+            <button type="button" class="ghost" data-lay="corners" title="The selected piece and three mirrored copies, one in each corner">One in each corner</button>
+            <button type="button" class="ghost" data-lay="down" title="Flip the selected piece top to bottom (Mirror, in the list, flips it left to right)">Flip top to bottom</button>
+          </div>
+          <div id="st-mono" hidden>
+            <p class="hint">Which initial goes where: type the names and pick an order.</p>
+            <div class="mono-names">
+              <label>First name <input type="text" id="st-mono-first" autocomplete="off" maxlength="30"></label>
+              <label>Middle name, or a partner’s first <input type="text" id="st-mono-middle" autocomplete="off" maxlength="30"></label>
+              <label>Last name <input type="text" id="st-mono-last" autocomplete="off" maxlength="30"></label>
+            </div>
+            <div id="st-mono-orders" class="mono-orders"></div>
+          </div>
+        </details>
+        <details class="recent" id="st-recent-box" hidden>
+          <summary>Recent designs <span class="hint inline" id="st-recent-count"></span></summary>
+          <p class="hint">Designs you had here before, kept in this browser. Tap one to open it again.</p>
+          <div id="st-recent" class="cards recent-cards"></div>
+        </details>
+      </fieldset>
+      <fieldset class="field">
+        <legend role="heading" aria-level="2">Selected piece <button type="button" id="st-center" class="link">Centre it</button></legend>
+        <p class="hint warn" id="st-big" role="status" hidden></p>
+        <div id="st-edit" class="edit"></div>
+        <p class="hint" id="st-drag-hint">Drag on the preview to move it<span class="keys">, or use the arrow keys (Shift for bigger steps)</span>. Tap an empty spot<span class="keys"> or press Esc</span> to unselect it.<span class="keys"> Ctrl+S (⌘S on a Mac) goes to Download.</span></p>
+      </fieldset>
+      <details class="steps">
+        <summary>How to stitch it <span class="hint inline" id="st-steps-count"></span></summary>
+        <p class="hint">Tap a step to see the design as it is after it. Sew along, under Download, shows how to hoop and which needle. <button type="button" id="st-steps-all" class="link" hidden>Show it all</button>
+          <button type="button" id="st-appl-open" class="link" hidden>Appliqué tips</button></p>
+        <ol id="st-steps" class="st-steps"></ol>
+      </details>
+    </div>
+
+    <div class="panel" id="panel-open" role="tabpanel" aria-labelledby="tab-open" hidden>
+      <h1>See any design before you stitch it</h1>
+      <p class="lede">Open a PES, PEC or DST file to see the stitches, the thread colours and whether it fits your hoop.</p>
+      <label class="drop" id="open-drop">
+        <input id="open-file" type="file" class="sr-file">
+        <span class="drop-text"><b>Choose a design file</b> or drop it here.</span>
+      </label>
+      <div id="open-info" class="info" hidden></div>
+      <p class="open-words"><button type="button" class="link" id="open-words">Add words to this design</button> <span class="hint">(a name or a message, in Design your own)</span></p>
+      <fieldset class="field" id="doctor" hidden>
+        <legend>Checkup</legend>
+        <ul id="doctor-list" class="doctor"></ul>
+        <div id="doctor-fix" class="edit"></div>
+      </fieldset>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <p id="foot-where">Everything runs in your browser. Your pictures and files never leave your computer.</p>
+  <p>© 2026 <a href="https://4gables.com/">4gables.com</a>. All rights reserved. <a href="https://github.com/4gables/needleworks/blob/main/LICENSE">Licence</a></p>
+</footer>
+<dialog id="code" class="names" aria-labelledby="code-title">
+  <form method="dialog">
+    <h2 id="code-title">Download this design</h2>
+    <p id="code-what">Type your download code to save <b id="code-file"></b>. A design you have already downloaded with a code is free to fetch again with it.</p>
+    <p id="code-more" hidden>With a download code there is no limit on previews.</p>
+    <label for="code-in">Download code</label>
+    <input id="code-in" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="64">
+    <p class="warn" id="code-note" role="alert" hidden></p>
+    <div class="row"><button type="button" class="primary" id="code-go">Download</button><button type="submit" class="ghost" id="code-cancel">Cancel</button></div>
+  </form>
+</dialog>
+<dialog id="done" class="names" aria-labelledby="done-title">
+  <form method="dialog">
+    <h2 id="done-title">Saved to your downloads</h2>
+    <p class="good" id="done-checked"></p>
+    <p class="warn" id="done-turn" hidden><span id="done-turn-text">The hoop is turned, so the machine sews this design on its side. Hoop the fabric a quarter turn round: the top of the design goes to the right-hand side of the hoop as you face the machine (the sew sheet shows it that way).</span></p>
+    <p class="warn" id="done-warn" hidden></p>
+    <p class="hint" id="done-cut" hidden>Cutting the fabric shapes on a Cricut or Silhouette? The Cutter file (next to Sew along) has them at actual size: lay each cut piece exactly on its outline when the steps say, with nothing to trim. It's for the cutting machine only: just the .pes goes on the USB stick.</p>
+    <p class="warn" id="done-format" hidden></p>
+    <p class="warn" id="done-zip" hidden>It's a .zip: open it first (double-click it) and copy the .pes files inside, not the .zip. The machine can't read a .zip.</p>
+    <ol class="done-steps">
+      <li><span id="done-copy">Copy the file to a USB stick.</span><span id="done-phone" hidden> On a phone: plug a USB-C (or Lightning) stick into it, then in the Files app move the file from Downloads to the stick. Or email the file to yourself and copy it on a computer.</span></li>
+      <li>Plug the stick into the machine's USB port and touch the USB key on its screen.</li>
+      <li id="done-sew">Pick the design, then follow “How to stitch it” (or Sew along) at every pause.</li>
+    </ol>
+    <p class="warn" id="done-own" hidden></p>
+    <label class="check small"><input type="checkbox" id="done-never"> Don't show this again</label>
+    <div class="row"><button type="button" class="primary" id="done-close" autofocus>Got it</button></div>
+  </form>
+</dialog>
+<dialog id="names" class="names" aria-labelledby="names-title">
+  <form method="dialog">
+    <h2 id="names-title">One for each name</h2>
+    <p class="hint" id="names-what"></p>
+    <textarea id="names-list" rows="6" aria-label="Names, one per line" placeholder="Ashley&#10;Liam&#10;Olivia" spellcheck="false"></textarea>
+    <p class="hint" id="names-note">One name per line, up to 40. You get one file for each, in a single .zip.</p>
+    <label class="check small" id="names-shrink-row"><input type="checkbox" id="names-shrink" checked> Make long names smaller so they fit</label>
+    <div class="names-thumbs" id="names-thumbs"></div>
+    <div class="row"><button type="submit" class="ghost" value="cancel" id="names-cancel">Cancel</button><button type="button" class="primary" id="names-make">Make the files</button></div>
+  </form>
+</dialog>
+<dialog id="areas" class="names areas" aria-labelledby="areas-title">
+  <form method="dialog">
+    <h2 id="areas-title">Choose what is sewn</h2>
+    <div class="seg" id="areas-tool" role="group" aria-label="What a tap does">
+      <button type="button" data-t="tap" aria-pressed="true">Sew or leave empty</button>
+      <button type="button" data-t="rub" aria-pressed="false">Rub out</button>
+      <button type="button" data-t="join" aria-pressed="false">Join two colours</button>
+    </div>
+    <p class="hint" id="areas-how"></p>
+    <div class="seg" id="areas-brush" role="group" aria-label="Brush size" hidden>
+      <button type="button" data-r="0.012" aria-pressed="false">Small brush</button>
+      <button type="button" data-r="0.03" aria-pressed="true">Medium</button>
+      <button type="button" data-r="0.07" aria-pressed="false">Large</button>
+    </div>
+    <canvas id="areas-canvas" role="img" aria-label="Your picture: its sewn parts in their thread colours, bare fabric as a checked pattern"></canvas>
+    <p class="hint" id="areas-said" role="status"></p>
+    <div class="row"><button type="button" class="ghost" id="areas-undo">Undo</button><button type="button" class="ghost" id="areas-reset">Start again</button><button type="submit" class="ghost" value="cancel">Cancel</button><button type="button" class="primary" id="areas-done">Sew it this way</button></div>
+  </form>
+</dialog>
+<dialog id="crop" class="names areas" aria-labelledby="crop-title">
+  <form method="dialog">
+    <h2 id="crop-title">Crop the picture</h2>
+    <p class="hint">Drag across the part to keep. Only that part is sewn.</p>
+    <canvas id="crop-canvas" role="img" aria-label="Your picture, with the part to keep marked"></canvas>
+    <p class="hint" id="crop-said" role="status"></p>
+    <div class="row"><button type="submit" class="ghost" value="cancel">Cancel</button><button type="button" class="primary" id="crop-done" disabled>Keep this part</button></div>
+  </form>
+</dialog>
+<dialog id="rename" class="names" aria-labelledby="rename-title">
+  <form method="dialog">
+    <h2 id="rename-title">Name the file</h2>
+    <input type="text" id="rename-name" aria-describedby="rename-note" autocomplete="off" spellcheck="false">
+    <p class="hint"><span id="rename-note"></span> <button type="button" class="link" id="rename-auto">Name it from the design</button></p>
+    <div class="row"><button type="submit" class="ghost" value="cancel">Cancel</button><button type="button" class="primary" id="rename-save">Save name</button></div>
+  </form>
+</dialog>
+<dialog id="machines" class="names" aria-labelledby="machines-title">
+  <form method="dialog">
+    <h2 id="machines-title">Which machine is yours?</h2>
+    <input type="search" id="machines-find" placeholder="Its maker or model, like Janome or PE900" aria-label="Find your machine" aria-describedby="machines-none" autocomplete="off" spellcheck="false">
+    <div id="machines-list" class="machine-list"></div>
+    <p class="hint" id="machines-none" hidden></p>
+    <div class="row"><button type="submit" class="ghost" value="cancel">Cancel</button></div>
+  </form>
+</dialog>
+<dialog id="spools" class="names" aria-labelledby="spools-title">
+  <form method="dialog">
+    <h2 id="spools-title">Threads I own</h2>
+    <label class="field"><span>Brand</span><select id="spools-brand"></select></label>
+    <p class="hint">Tap the spools you have.</p>
+    <input type="search" id="spools-find" placeholder="Find a spool number or colour name" aria-label="Find a spool" autocomplete="off" spellcheck="false">
+    <p class="hint" id="spools-none" hidden></p>
+    <p class="hint spools-other" id="spools-other"><span>Another brand (Madeira, Gunold…)? Hold a spool by the screen and pick its colour:</span> <input type="color" id="spools-colour" value="#7f3fbf" aria-label="Your spool's colour"> <button type="button" class="link" id="spools-all" hidden>Show every spool</button></p>
+    <div class="spools-own" id="spools-own" hidden role="group" aria-labelledby="spools-own-head">
+      <p class="hint" id="spools-own-head">Add it as your own spool (the machine sews it as the nearest of its threads):</p>
+      <input type="text" id="own-brand" placeholder="Brand, e.g. Madeira" aria-label="Your spool's brand" autocomplete="off" maxlength="30">
+      <input type="text" id="own-num" placeholder="Number, if any" aria-label="Your spool's number" autocomplete="off" maxlength="20">
+      <button type="button" class="ghost" id="own-add">Add my spool</button>
+      <p class="hint" id="own-hint"></p>
+    </div>
+    <div id="spools-grid" class="spool-grid" role="group" aria-label="Spools" aria-describedby="spools-grid-keys"></div>
+    <span class="sr" id="spools-grid-keys">Arrow keys go between the spools; Space or Enter ticks one.</span>
+    <p class="hint" id="spools-note"></p>
+    <div id="spools-chips" class="spool-chips"></div>
+    <details class="spools-type"><summary>Type or paste the numbers instead</summary>
+      <textarea id="spools-list" rows="3" aria-label="Spool numbers you own" placeholder="The numbers on your spools, e.g. 0020 1902 3541" spellcheck="false"></textarea></details>
+    <div class="row"><button type="submit" class="ghost" value="cancel">Cancel</button><button type="button" class="primary" id="spools-save">Save</button></div>
+  </form>
+</dialog>
+<dialog id="along" class="along" aria-labelledby="along-title">
+  <header><span id="along-count"></span><button type="button" id="along-close" class="link">Close</button></header>
+  <canvas id="along-view" aria-hidden="true"></canvas>
+  <div class="along-body">
+    <h2 id="along-title"></h2>
+    <div id="along-look" class="along-ready along-look" hidden></div>
+    <div id="along-ready" class="along-ready" hidden><h3>Have ready</h3><ul></ul></div>
+    <p id="along-turn" class="along-turn" hidden></p>
+    <div id="along-you"></div>
+    <p id="along-sews"></p>
+    <p id="along-time" class="hint"></p>
+    <details id="along-hoop" class="along-wrong" hidden><summary>How to hoop it, and which needle</summary><div id="along-hoop-text"></div></details>
+    <details id="along-wrong" class="along-wrong" hidden><summary>Sewed with the wrong thread?</summary>
+      <ol class="sub"><li>Press the machine's start/stop button to stop it.</li><li>Unpick what it sewed: snip the stitches on the back every few stitches and pull them out from the front.</li><li>On the machine's screen, go back to where this thread started with the stitch back key (the needle with −).</li><li>Put on the right thread and press Start.</li></ol></details>
+  </div>
+  <nav><button type="button" id="along-back" class="ghost">Back</button><button type="button" id="along-next" class="primary">Next step</button></nav>
+</dialog>
+<dialog id="item" class="names item-dlg" aria-labelledby="item-title">
+  <form method="dialog">
+    <h2 id="item-title">See it on your item</h2>
+    <p class="hint">Take or choose a photo of the bib, towel or shirt, straight on and flat. Then drag the two dots to the ends of something you can measure, like the item's width or a ruler in the photo, and type how long it is.</p>
+    <label class="ghost item-pick">Choose a photo<input type="file" accept="image/*" id="item-file" class="sr-file"></label>
+    <canvas id="item-cal" hidden tabindex="0" aria-label="The photo with two dots: drag them, or use the arrow keys (Shift moves the second dot)"></canvas>
+    <p class="error-inline" id="item-error" role="alert" hidden></p>
+    <p class="item-len" id="item-len-row" hidden><label for="item-len">Between the dots:</label> <input type="number" id="item-len" min="1" max="200" step="0.5" value="20"> <select id="item-unit" aria-label="Unit"><option value="10">cm</option><option value="25.4">in</option></select></p>
+    <p class="hint">The photo stays on this device. Drag it under the design to place it.</p>
+    <div class="row"><button type="submit" class="ghost" value="cancel">Cancel</button><button type="button" class="primary" id="item-done" disabled>Show it on my item</button></div>
+  </form>
+</dialog>
+<div id="sheet" class="sheet" aria-hidden="true"></div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
