@@ -11,7 +11,7 @@
 // cache.
 // (`SET`: a fingerprint of the list below, written with the hashes. It is part of the cache's name, so a release whose
 // files changed can never install into the cache the running one is serving from, version number bumped or not.)
-const SET = "88e60b18fb45";
+const SET = "10f04ef42395";
 const CACHE = `needleworks-p41-${SET}`, SHARED = "needleworks-shared";
 const FILES = {
   "index.html": "72f14c9869ffdfed1ad470f9bfb34d628f53af15b4b24e351dd394ce0d7c57d8",
@@ -20,7 +20,7 @@ const FILES = {
   "privacy.html": "5a9f17142d9b3ba6c50f1f089bb35202f983be839ac3268cebd0c09ab30eb8aa",
   "js/along.js": "5877433450bc9b2e8c474a46829e506b62a16b805fee20dc6bd68284239e4c7c",
   "js/api.js": "7a8e36458de961d0ea0fb87a4d041848dea4a4d831f103a3dbe960530f3fa912",
-  "js/app.js": "06876b22bc8253bafb4946b716c1fb23dbd070318c7b9fdc769bbae09769adba",
+  "js/app.js": "d678906ebc5226e0853ea187acddf97924f3cc4bce936234677dc9b6201c8e93",
   "js/artwords.js": "2a11e7dd198bc1aeffab3bc276046b11cffc87ffc63279b966eb2cd8529937e3",
   "js/checkup.js": "c6429ff76bf84b41de061aa727031e63ff8de2b7120b09834f2e0998dbd87766",
   "js/common.js": "06ad65797e7434f27724001cb1fdd63970506ac785d36041d279c82a6fc42c4c",
