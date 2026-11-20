@@ -11,8 +11,8 @@
 // cache.
 // (`SET`: a fingerprint of the list below, written with the hashes. It is part of the cache's name, so a release whose
 // files changed can never install into the cache the running one is serving from, version number bumped or not.)
-const SET = "e2a2a61ca9f7";
-const CACHE = `needleworks-p42-${SET}`, SHARED = "needleworks-shared";
+const SET = "25ea3446bf41";
+const CACHE = `needleworks-p43-${SET}`, SHARED = "needleworks-shared";
 const FILES = {
   "index.html": "72f14c9869ffdfed1ad470f9bfb34d628f53af15b4b24e351dd394ce0d7c57d8",
   "manifest.webmanifest": "82f627e1def5254866cf364a55a1c2a85e2c3dd61abeeb890829362969fcfb63",
@@ -21,7 +21,7 @@ const FILES = {
   "js/along.js": "5877433450bc9b2e8c474a46829e506b62a16b805fee20dc6bd68284239e4c7c",
   "js/api.js": "7a8e36458de961d0ea0fb87a4d041848dea4a4d831f103a3dbe960530f3fa912",
   "js/app.js": "d678906ebc5226e0853ea187acddf97924f3cc4bce936234677dc9b6201c8e93",
-  "js/artwords.js": "2a11e7dd198bc1aeffab3bc276046b11cffc87ffc63279b966eb2cd8529937e3",
+  "js/artwords.js": "41c08b6a95918621f461dbb9a2eff08f808618b252c160d7316ce6da82c06751",
   "js/checkup.js": "c6429ff76bf84b41de061aa727031e63ff8de2b7120b09834f2e0998dbd87766",
   "js/common.js": "06ad65797e7434f27724001cb1fdd63970506ac785d36041d279c82a6fc42c4c",
   "js/core/areas.js": "0e5729ec0ae789f426adc49ecc1f2d3e9a21b8c47dd3cc06639f8e9db49801e4",
@@ -34,7 +34,7 @@ const FILES = {
   "js/core/formats.js": "6c635b29d843e7eb112ad773f92f79b26ea0ad17769889104b271faa2915b76e",
   "js/core/glyphs.js": "1aa94c2a28d8343fa6837d8f0591e325a9128063bfce81d968bf592feda6cbf3",
   "js/core/grid.js": "c213a2103ab299554d805123c3172f7a2aa2a5283c894154aa8dda76008167cb",
-  "js/core/limits.js": "b71e5e934d1735cda51f8f4e7f131f4e3570cc08f57fb12f119afe2b2af09816",
+  "js/core/limits.js": "65e92548afe9e1278a38f87324de126048c83713e30c4eb6cdf66bd3dc8ced39",
   "js/core/machines.js": "afd9fe6fc812a0b03d903fc54a374b3246ac27539c9cff7d5ea546ed9e81c135",
   "js/core/picprep.js": "66d84de80b018aa3b1d5dcf440c668ca9650d75cbf82816a8c4cd506678e6bc8",
   "js/core/threads.js": "2f843722671915cef7d2aad9344f171040e59d2cf70aa43b139da9dd4229fc1f",
