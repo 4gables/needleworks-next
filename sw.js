@@ -11,8 +11,8 @@
 // cache.
 // (`SET`: a fingerprint of the list below, written with the hashes. It is part of the cache's name, so a release whose
 // files changed can never install into the cache the running one is serving from, version number bumped or not.)
-const SET = "10f04ef42395";
-const CACHE = `needleworks-p41-${SET}`, SHARED = "needleworks-shared";
+const SET = "e2a2a61ca9f7";
+const CACHE = `needleworks-p42-${SET}`, SHARED = "needleworks-shared";
 const FILES = {
   "index.html": "72f14c9869ffdfed1ad470f9bfb34d628f53af15b4b24e351dd394ce0d7c57d8",
   "manifest.webmanifest": "82f627e1def5254866cf364a55a1c2a85e2c3dd61abeeb890829362969fcfb63",
@@ -36,7 +36,7 @@ const FILES = {
   "js/core/grid.js": "c213a2103ab299554d805123c3172f7a2aa2a5283c894154aa8dda76008167cb",
   "js/core/limits.js": "b71e5e934d1735cda51f8f4e7f131f4e3570cc08f57fb12f119afe2b2af09816",
   "js/core/machines.js": "afd9fe6fc812a0b03d903fc54a374b3246ac27539c9cff7d5ea546ed9e81c135",
-  "js/core/picprep.js": "fb32c13601e92763b4a4e472d09617730670a9b0491ca283096486f40664462c",
+  "js/core/picprep.js": "66d84de80b018aa3b1d5dcf440c668ca9650d75cbf82816a8c4cd506678e6bc8",
   "js/core/threads.js": "2f843722671915cef7d2aad9344f171040e59d2cf70aa43b139da9dd4229fc1f",
   "js/core/turn.js": "6b2c99d6192fef78e95e488126776194a368a0e89b1bd48009f2123ce7394081",
   "js/core/typed.js": "bca3a62351d99bff324c3012869f3910ec697bdc744906cf74a18f013df99e38",
@@ -46,11 +46,11 @@ const FILES = {
   "js/jobs.js": "1309a0a2ad6edd8d872c0e7af21e48da0041406b1f901d8a95c3af157a6d6617",
   "js/onitem.js": "e8f881bc81209ff19ee6a80c75afa0abb9a2f120077228d9370b5c864e054f6d",
   "js/opened.js": "c0e40a9c5328d974ba46d62d25fcd49ce8308ef1b33f16ff829bef5fd225dc71",
-  "js/picture.js": "df3e362ed8f80dd353f9614a3889a3adffbc9914acb46bde63cb919df7616102",
+  "js/picture.js": "3a83bfec598bf043fb21133276ce05e5cc8c3ecbf9b243d253fea3772eacca81",
   "js/quality.js": "884c358c4f924c97f158c52722b18add1dd5f44e97d848a59743b52be068e4ee",
   "js/remote-doctor.js": "6d020d6b9fac3b75ac9099a3f4b9cbd39b430d010112e1cb16da128d228db8f7",
   "js/remote-picture.js": "2e11a1b7a2d22e285576f8ccc3b05b903a1fb603df2b7cf285c4485848d67543",
-  "js/remote-worker.js": "d41f63fa70379aaae37115e027d7c701fed6c777fffea1040029f1fc0a328e11",
+  "js/remote-worker.js": "4a5f0b8a153cc8e9066638f3c27c3822fed7277c3979f1c15fc4a6af00774cf9",
   "js/render.js": "d4dea231700c46bc70c82d24e1db88abe84dd0929343cd1329d6629ff1b2e1cf",
   "js/sheet.js": "27290ea9399e4d587c9a7ed5889603026a51bc0e5edc675c35d6bd2691de4678",
   "js/state.js": "3e294bba527f0066248fe15e75fd5b208f7c14e75d2e1a1d42b26d1b379bfe6c",
